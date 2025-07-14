@@ -26,9 +26,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme(
           brightness: Brightness.light,
-          primary: Colors.green,
+          primary: Color(0xff81d4fa),
           onPrimary: Colors.white,
-          secondary: Colors.brown,
+          secondary: Colors.white,
           onSecondary: Colors.grey,
           error: Colors.red,
           onError: Colors.black,
@@ -36,17 +36,22 @@ class MyApp extends StatelessWidget {
           onSurface: Colors.black,
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xff81d4fa),
+          foregroundColor: Colors.white
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xff81d4fa),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(10))
             ),
-
           )
-        )
+        ),
+        textTheme: TextTheme(
+          bodyLarge: TextStyle(fontWeight: FontWeight.bold),
+          bodyMedium: TextStyle(fontWeight: FontWeight.w400),
+        ),
+
       ),
       home: const HomePage(),
     );

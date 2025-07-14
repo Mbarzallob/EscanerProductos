@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:identificador_productos/services/producto.service.dart';
 
 class Escaner extends StatefulWidget {
   const Escaner({super.key});
@@ -23,10 +26,7 @@ class _EscanerState extends State<Escaner> {
   inicializarControler() async {
     final cameras = await availableCameras();
     final firstCamera = cameras.first;
-    _controller = CameraController(
-      firstCamera,
-      ResolutionPreset.medium,
-    );
+    _controller = CameraController(firstCamera, ResolutionPreset.medium);
 
     _initializeControllerFuture = _controller.initialize();
     setState(() {});
@@ -42,72 +42,52 @@ class _EscanerState extends State<Escaner> {
     try {
       final XFile picture = await _controller.takePicture();
 
-
       setState(() {
         imagen = picture; // Asignar la imagen tomada
       });
-
-      // Mostrar la imagen en un BottomSheet
-      await showModalBottomSheet(
+      if (imagen == null) {
+        return;
+      }
+      var valida = await showModalBottomSheet(
         backgroundColor: Colors.white,
         context: context,
         useSafeArea: true,
         isScrollControlled: true,
         builder: (context) {
-          return Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                        width: MediaQuery.of(context).size.width/2,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20)
-                        ),
-                        child: Image.file(File(imagen!.path))),
-                    ElevatedButton(onPressed: ()=>Navigator.pop(context), child: Text("Aceptar", style: TextStyle(color: Colors.white),))
-                  ],
-                ),
-              ),
-            ],
-          );
+          return ShowImage(imagen: imagen!);
         },
       );
-
-
-    } catch (e) {
-      print("Error tomando foto: $e");
-    }
-
-
+      if(valida == null || !valida) return;
+      Navigator.pop(context, imagen);
+      return;
+    } catch (e) {}
   }
-
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Escáner de cámara"),
+          title: Text(
+            "Escáner de productos",
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         body: Stack(
           children: <Widget>[
-            Column(
-              children: [
-                FutureBuilder<void>(
-                  future: _initializeControllerFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      // Si el controlador se ha inicializado, mostrar la vista previa de la cámara
-                      return Expanded(child: CameraPreview(_controller));
-                    } else {
-                      // Mientras se inicializa, mostrar un indicador de carga
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                  },
-                ),
-              ],
+            FutureBuilder<void>(
+              future: _initializeControllerFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return SizedBox(
+                    width: double.infinity,
+                    height: double.infinity,
+                    child: CameraPreview(_controller),
+                  );
+                } else {
+                  return const Center(child: CircularProgressIndicator());
+                }
+              },
             ),
             Align(
               alignment: Alignment.bottomCenter,
@@ -123,6 +103,62 @@ class _EscanerState extends State<Escaner> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ShowImage extends StatefulWidget {
+  ShowImage({super.key, required this.imagen});
+  XFile imagen;
+  @override
+  State<ShowImage> createState() => _ShowImageState();
+}
+
+class _ShowImageState extends State<ShowImage> {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 1,
+      child: Column(
+        spacing: 15,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(Icons.close, size: 40),
+                ),
+              ],
+            ),
+          ),
+
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 60.0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.file(File(widget.imagen.path)),
+              ),
+            ),
+          ),
+
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.black,
+            child: IconButton(
+              color: Colors.black,
+              onPressed: () =>
+                Navigator.pop(context, true)
+              ,
+              icon: Icon(Icons.arrow_forward_ios_outlined, color: Colors.white, size: 30),
+            ),
+          ),
+        ],
       ),
     );
   }
